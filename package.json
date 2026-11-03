@@ -1,0 +1,12 @@
+{
+  "name": "tinycompress",
+  "version": "1.0.0",
+  "description": "Local bulk image compressor and converter using TinyPNG API keys with automatic failover",
+  "private": true,
+  "main": "server.js",
+  "engines": { "node": ">=22.2" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}

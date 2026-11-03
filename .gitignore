@@ -1,0 +1,6 @@
+data/
+output/
+node_modules/
+.wrangler/
+.dev.vars
+.claude/

@@ -24,6 +24,7 @@
         <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></symbol>
         <symbol id="i-zip" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" /></symbol>
         <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
         <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
         <symbol id="i-logo" viewBox="0 0 24 24"><path d="M4 14l6-6 4 4 6-6M4 20h16" /></symbol>
       </defs>
@@ -43,11 +44,28 @@
           <div class="panel-head">
             <h2 id="keys-title">API keys</h2>
             <div class="panel-tools">
-              <button id="recheck" class="text-btn" type="button">Recheck</button>
               <button id="toggle-keys" class="text-btn" type="button">Add key</button>
             </div>
           </div>
-          <ul id="key-list" class="keys"></ul>
+          <div id="keys-box" class="keys-box" hidden>
+            <button id="keys-summary" class="keys-summary" type="button" aria-expanded="false" aria-controls="keys-detail">
+              <span class="keys-stats" title="Compressions left assumes TinyPNG's free plan of 500 a month per key">
+                <span class="keys-stat"><strong id="keys-left">0</strong><small>compressions left</small></span>
+                <span class="keys-stat"><strong id="keys-used">0</strong><small>used this month</small></span>
+              </span>
+              <span class="meter"><span id="keys-bar"></span></span>
+              <span class="keys-foot">
+                <span id="keys-note"></span>
+                <svg class="icon" aria-hidden="true"><use href="#i-chevron" /></svg>
+              </span>
+            </button>
+            <div id="keys-detail" class="keys-detail" inert>
+              <div class="keys-detail-inner">
+                <ul id="key-list" class="keys"></ul>
+                <button id="recheck" class="text-btn" type="button">Recheck keys</button>
+              </div>
+            </div>
+          </div>
           <form id="key-form" class="key-form">
             <label for="key-input">Paste one or more keys, one per line</label>
             <textarea id="key-input" rows="3" spellcheck="false" autocomplete="off"></textarea>

@@ -18,11 +18,18 @@ In the Cloudflare dashboard, go to Workers & Pages → Create application, conne
 
 It also works as a Cloudflare Pages project: leave the build command empty and set the build output directory to `public`.
 
-There is nothing else to configure. Each visitor adds their own keys, which stay in their own browser.
+Visitors can add their own keys, which stay in their own browser.
+
+### Default keys
+
+To give the site keys that work without anyone adding them, go to your project's Settings → Variables and Secrets, add a variable named `TINIFY_KEYS` with the type **Secret**, and paste the keys separated by spaces or commas. Then deploy again.
+
+- **Secure:** the keys stay encrypted on Cloudflare and are added on the server, so they are never sent to the browser or stored in this repository. Never put them in the code or in `wrangler.toml`.
+- **Who can use them:** anyone who can open your site can spend these compressions. A visitor's own keys are used first. To restrict the site, turn on Cloudflare Access in the project's settings.
 
 How it differs from the local version:
 
-- **Keys:** saved in the browser's local storage rather than `data/keys.json`.
+- **Keys:** the keys a visitor adds are saved in the browser's local storage rather than `data/keys.json`.
 - **Results:** kept in the tab until you download the ZIP. In Chrome and Edge you can choose to save straight to a folder instead, which is better for very large batches.
 - **Privacy:** images and keys pass through a Cloudflare function on the way to TinyPNG. It only forwards them and stores nothing.
 - **Limits on the free plan:** 100 MB per image and 100,000 function requests a day, shared by everyone using your site. Each TinyPNG call is one request, so AVIF from a PNG or JPEG uses about 2 per image.

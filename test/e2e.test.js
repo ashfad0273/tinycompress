@@ -386,7 +386,7 @@ test('Cloudflare Worker routes API calls and serves everything else as files', a
   };
   const call = (route, init) => worker.fetch(new Request(`https://x.workers.dev${route}`, init), env);
 
-  assert.deepStrictEqual(await (await call('/api/config')).json(), { mode: 'cloud' });
+  assert.deepStrictEqual(await (await call('/api/config')).json(), { mode: 'cloud', defaultKeys: 0 });
   assert.strictEqual(await (await call('/index.html')).text(), 'static file');
   assert.strictEqual((await call('/api/other')).status, 404);
   const shrink = await call('/api/tinify/shrink', {
@@ -397,4 +397,42 @@ test('Cloudflare Worker routes API calls and serves everything else as files', a
   });
   assert.strictEqual(shrink.status, 201);
   assert.match(shrink.headers.get('location'), /^\/api\/tinify\/output\/\d+$/);
+});
+
+test('Default keys are used on the server and never reach the browser', async () => {
+  const { default: worker } = await import('../worker.mjs');
+  const secret = 'key-one-00000';
+  allowance.set(secret, 5);
+  const env = { TINIFY_API_URL: mockUrl, TINIFY_KEYS: `${secret}, key-two-00000` };
+  const call = (route, init) => worker.fetch(new Request(`https://x.workers.dev${route}`, init), env);
+
+  const configText = await (await call('/api/config')).text();
+  assert.deepStrictEqual(JSON.parse(configText), { mode: 'cloud', defaultKeys: 2 });
+  assert.ok(!configText.includes(secret));
+
+  const shrink = await call('/api/tinify/shrink', {
+    method: 'POST',
+    body: 'imagebytes',
+    duplex: 'half',
+    headers: { 'X-Default-Key': '0' },
+  });
+  assert.strictEqual(shrink.status, 201);
+  assert.strictEqual(used.get(secret), 1);
+  assert.ok(![...shrink.headers.values()].some((value) => value.includes(secret)));
+
+  for (const position of ['5', 'constructor', '-1']) {
+    const unknown = await call('/api/tinify/shrink', { method: 'POST', headers: { 'X-Default-Key': position } });
+    assert.strictEqual(unknown.status, 401);
+  }
+});
+
+test("A visitor's own key is used before the default keys", () => {
+  const { KeyRing } = require('../public/core.js');
+  const ring = new KeyRing([{ id: 'default-0', key: '0', label: 'Default 1', shared: true, status: 'active', count: 0 }]);
+  assert.strictEqual(ring.next().id, 'default-0');
+  const own = ring.add('own-key-00000', 'active');
+  assert.strictEqual(ring.next().id, own.id);
+  ring.setStatus(own.id, 'exhausted');
+  assert.strictEqual(ring.next().id, 'default-0');
+  assert.strictEqual(ring.list().find((k) => k.shared).masked, 'Default 1');
 });

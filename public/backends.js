@@ -95,7 +95,7 @@ function createLocalBackend() {
   };
 }
 
-function createCloudBackend() {
+function createCloudBackend(defaultKeyCount) {
   const { KeyRing, NoKeysError, OutputPlanner, TinifyClient, TinifyError, ZipWriter } = TinyCore;
   const { batchId, crc32, describeOutput, safeSegments } = TinyCore;
   const STORAGE_KEY = 'tinycompress.keys';
@@ -108,12 +108,21 @@ function createCloudBackend() {
       } catch {
         // Storage is blocked or damaged, so keys last only as long as this tab.
       }
-      super(keys);
+      const defaults = Array.from({ length: defaultKeyCount }, (_, i) => ({
+        id: `default-${i}`,
+        key: String(i),
+        label: `Default ${i + 1}`,
+        shared: true,
+        status: 'active',
+        count: 0,
+        note: '',
+      }));
+      super([...keys, ...defaults]);
     }
 
     save() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.keys));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.keys.filter((k) => !k.shared)));
       } catch {
         // Same as above.
       }
@@ -143,7 +152,7 @@ function createCloudBackend() {
     mode: 'cloud',
     canOpenFolder: false,
     canPickFolder: 'showDirectoryPicker' in window,
-    privacyText: 'Your keys stay in this browser. Images pass through Cloudflare to the TinyPNG API and are not stored.',
+    privacyText: 'Keys you add stay in this browser. Images pass through Cloudflare to the TinyPNG API and are not stored.',
 
     listKeys: async () => keys.list(),
     async addKeys(raw) {
@@ -245,5 +254,5 @@ function createCloudBackend() {
 
 async function createBackend() {
   const { ok, body } = await requestJson('/api/config').catch(() => ({ ok: false, body: {} }));
-  return ok && body.mode === 'local' ? createLocalBackend() : createCloudBackend();
+  return ok && body.mode === 'local' ? createLocalBackend() : createCloudBackend(body.defaultKeys || 0);
 }

@@ -89,8 +89,37 @@ function setKeys(keys) {
 
 const STATUS_TEXT = { active: 'Ready', exhausted: 'Limit reached', invalid: 'Invalid key' };
 
+function compressionsLeft() {
+  return state.keys
+    .filter((k) => k.status === 'active')
+    .reduce((sum, k) => sum + Math.max(0, FREE_PLAN_LIMIT - k.count), 0);
+}
+
+function renderKeySummary() {
+  const left = compressionsLeft();
+  const used = state.keys.reduce((sum, k) => sum + k.count, 0);
+  const atLimit = state.keys.filter((k) => k.status === 'exhausted').length;
+  const invalid = state.keys.filter((k) => k.status === 'invalid').length;
+  $('keys-left').textContent = left.toLocaleString();
+  $('keys-used').textContent = used.toLocaleString();
+  $('keys-bar').style.width = `${used + left ? (used / (used + left)) * 100 : 100}%`;
+  $('keys-note').textContent = [
+    `${state.keys.length} ${state.keys.length === 1 ? 'key' : 'keys'}`,
+    atLimit && `${atLimit} at limit`,
+    invalid && `${invalid} invalid`,
+  ].filter(Boolean).join(' · ');
+  $('keys-box').hidden = !state.keys.length;
+}
+
+// Least used first. Keys that can't be used at all go last, whatever their count.
+function keysByUsage() {
+  const invalid = (k) => (k.status === 'invalid' ? 1 : 0);
+  return [...state.keys].sort((a, b) => invalid(a) - invalid(b) || a.count - b.count);
+}
+
 function renderKeys(known) {
-  $('key-list').replaceChildren(...state.keys.map((key) => {
+  renderKeySummary();
+  $('key-list').replaceChildren(...keysByUsage().map((key) => {
     const li = document.createElement('li');
     li.classList.add(key.status);
     if (key.inUse) li.classList.add('current');
@@ -106,7 +135,8 @@ function renderKeys(known) {
       setKeys(await backend.removeKey(key.id));
       syncKeyForm();
     });
-    top.append(dot, code, remove);
+    top.append(dot, code);
+    if (!key.shared) top.append(remove);
 
     const info = document.createElement('div');
     info.className = 'key-state';
@@ -130,9 +160,14 @@ function syncKeyForm(forceOpen) {
   const open = forceOpen ?? !state.keys.length;
   $('key-form').classList.toggle('open', open);
   $('toggle-keys').hidden = !state.keys.length;
-  $('recheck').hidden = !state.keys.length;
   $('toggle-keys').textContent = open ? 'Cancel' : 'Add key';
 }
+
+$('keys-summary').addEventListener('click', () => {
+  const open = $('keys-box').classList.toggle('open');
+  $('keys-summary').setAttribute('aria-expanded', open);
+  $('keys-detail').inert = !open;
+});
 
 $('toggle-keys').addEventListener('click', () => {
   const open = !$('key-form').classList.contains('open');
@@ -678,9 +713,7 @@ function renderEstimate() {
     hint.textContent = 'Each upload uses 1 compression. Each conversion to another format uses 1 more.';
     return;
   }
-  const left = state.keys
-    .filter((k) => k.status === 'active')
-    .reduce((sum, k) => sum + Math.max(0, FREE_PLAN_LIMIT - k.count), 0);
+  const left = compressionsLeft();
   hint.textContent = `This batch needs about ${total.toLocaleString()} compressions.`;
   if (total > left) {
     hint.textContent += ` On the free plan your keys have about ${left.toLocaleString()} left, so add more or the batch will pause.`;

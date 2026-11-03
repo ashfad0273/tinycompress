@@ -1,6 +1,8 @@
+import { defaultKeys } from '../../default-keys.js';
+
 // Passes requests from the page to the TinyPNG API, which doesn't accept calls from web pages.
-// Nothing is stored: keys come from the visitor's browser on each request, and bodies are
-// streamed straight through. Only the two TinyPNG paths the app uses can be reached.
+// Nothing is stored: a request carries either the visitor's own key or the position of a default
+// key, and bodies are streamed straight through. Only the two TinyPNG paths the app uses can be reached.
 const ALLOWED_PATH = /^(shrink|output\/[\w-]+)$/;
 const FORWARDED_HEADERS = ['content-type', 'content-length', 'compression-count', 'image-width', 'image-height'];
 
@@ -18,7 +20,10 @@ export async function onRequest({ request, env, params }) {
   if (!ALLOWED_PATH.test(path)) return error(404, 'Not found');
   if (method !== 'POST' && !(method === 'GET' && path !== 'shrink')) return error(405, 'Method not allowed');
 
-  const authorization = request.headers.get('authorization');
+  const defaultKey = request.headers.get('x-default-key');
+  const secret = defaultKey && defaultKeys(env)[Number(defaultKey)];
+  if (defaultKey && !secret) return error(401, 'This default key is no longer available');
+  const authorization = secret ? `Basic ${btoa(`api:${secret}`)}` : request.headers.get('authorization');
   if (!authorization) return error(401, 'Missing API key');
 
   const headers = { Authorization: authorization };

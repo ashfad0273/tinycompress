@@ -8,7 +8,7 @@ const TINIFY_PREFIX = '/api/tinify/';
 export default {
   fetch(request, env) {
     const { pathname } = new URL(request.url);
-    if (pathname === '/api/config' && request.method === 'GET') return config();
+    if (pathname === '/api/config' && request.method === 'GET') return config({ env });
     if (pathname.startsWith(TINIFY_PREFIX)) {
       const path = pathname.slice(TINIFY_PREFIX.length).split('/');
       return tinify({ request, env, params: { path } });

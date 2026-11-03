@@ -25,6 +25,7 @@
 
   const currentMonth = () => new Date().toISOString().slice(0, 7);
   const maskKey = (secret) => `${secret.slice(0, 4)}…${secret.slice(-4)}`;
+  const keyName = (k) => k.label || maskKey(k.key);
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   function batchId() {
@@ -36,7 +37,8 @@
   /* API keys */
 
   // Decides which key to use next. Keys are used in the order they were added, and a key
-  // stays in use until it runs out. Subclasses decide where the keys are stored.
+  // stays in use until it runs out. A visitor's own keys go before the site's default keys.
+  // Subclasses decide where the keys are stored.
   class KeyRing {
     constructor(keys = []) {
       this.keys = keys;
@@ -58,9 +60,14 @@
       }
     }
 
+    current() {
+      const usable = this.keys.filter((k) => k.status === 'active');
+      return usable.find((k) => !k.shared) || usable[0] || null;
+    }
+
     next() {
       this.refreshMonth();
-      return this.keys.find((k) => k.status === 'active') || null;
+      return this.current();
     }
 
     has(secret) {
@@ -105,10 +112,11 @@
     // The interface only ever receives this view, never the full key.
     list() {
       this.refreshMonth();
-      const current = this.keys.find((k) => k.status === 'active');
+      const current = this.current();
       return this.keys.map((k) => ({
         id: k.id,
-        masked: maskKey(k.key),
+        masked: keyName(k),
+        shared: Boolean(k.shared),
         status: k.status,
         count: k.count,
         note: k.note,
@@ -153,7 +161,8 @@
     }
 
     async request(key, method, url, { body, json } = {}) {
-      const headers = { Authorization: `Basic ${btoa(`api:${key.key}`)}` };
+      // A default key's real value is only known to the server, which fills it in.
+      const headers = key.shared ? { 'X-Default-Key': key.key } : { Authorization: `Basic ${btoa(`api:${key.key}`)}` };
       if (json) headers['Content-Type'] = 'application/json';
 
       let res;
@@ -246,8 +255,8 @@
         const next = this.keys.next();
         onEvent({
           stage: 'switch',
-          from: maskKey(key.key),
-          to: next ? maskKey(next.key) : null,
+          from: keyName(key),
+          to: next ? keyName(next) : null,
           reason: status === 'invalid' ? 'was rejected' : 'reached its limit',
           keys: this.keys.list(),
         });
@@ -292,7 +301,7 @@
     }
 
     async runWithKey(key, { input, formats, isDone, save, onEvent }) {
-      onEvent({ stage: 'upload', key: maskKey(key.key) });
+      onEvent({ stage: 'upload', key: keyName(key) });
       const shrink = await this.request(key, 'POST', `${this.baseUrl}/shrink`, { body: input });
       const location = shrink.headers.get('location');
       if (!location) throw new TinifyError('transient', 'Tinify response had no output URL');

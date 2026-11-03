@@ -376,3 +376,25 @@ test('browser checksum matches zlib and its archive opens as valid entries', () 
   assert.strictEqual(archive.readUInt32LE(14), zlib.crc32(data));
   assert.strictEqual(archive.subarray(archive.length - 22).readUInt32LE(0), 0x06054b50);
 });
+
+test('Cloudflare Worker routes API calls and serves everything else as files', async () => {
+  const { default: worker } = await import('../worker.mjs');
+  allowance.set('key-one-00000', 5);
+  const env = {
+    TINIFY_API_URL: mockUrl,
+    ASSETS: { fetch: async () => new Response('static file') },
+  };
+  const call = (route, init) => worker.fetch(new Request(`https://x.workers.dev${route}`, init), env);
+
+  assert.deepStrictEqual(await (await call('/api/config')).json(), { mode: 'cloud' });
+  assert.strictEqual(await (await call('/index.html')).text(), 'static file');
+  assert.strictEqual((await call('/api/other')).status, 404);
+  const shrink = await call('/api/tinify/shrink', {
+    method: 'POST',
+    body: 'imagebytes',
+    duplex: 'half',
+    headers: { Authorization: `Basic ${btoa('api:key-one-00000')}` },
+  });
+  assert.strictEqual(shrink.status, 201);
+  assert.match(shrink.headers.get('location'), /^\/api\/tinify\/output\/\d+$/);
+});

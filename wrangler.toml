@@ -1,3 +1,8 @@
 name = "tinycompress"
-pages_build_output_dir = "./public"
+main = "worker.mjs"
 compatibility_date = "2026-01-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]

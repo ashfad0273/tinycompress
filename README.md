@@ -1,6 +1,6 @@
 # TinyCompress
 
-Bulk image compressor and converter using your TinyPNG API keys. Run it on your own computer, or publish it on Cloudflare Pages.
+Bulk image compressor and converter using your TinyPNG API keys. Run it on your own computer, or publish it on Cloudflare.
 
 ## Run locally
 
@@ -12,11 +12,11 @@ Double-click `start.bat`, or run `npm start` and open http://127.0.0.1:4711. Req
 
 Results go to `output/<date_time>/` with your folder structure kept.
 
-## Publish on Cloudflare Pages
+## Publish on Cloudflare
 
-1. In the Cloudflare dashboard, go to Workers & Pages → Create → Pages → Connect to Git.
-2. Pick this repository. Leave the build command empty and set the build output directory to `public`.
-3. Deploy. Every push to the main branch redeploys automatically.
+In the Cloudflare dashboard, go to Workers & Pages → Create application, connect this GitHub repository, and keep the suggested settings: an empty build command and `npx wrangler deploy` as the deploy command. Every push to the main branch redeploys automatically.
+
+It also works as a Cloudflare Pages project: leave the build command empty and set the build output directory to `public`.
 
 There is nothing else to configure. Each visitor adds their own keys, which stay in their own browser.
 
@@ -30,7 +30,7 @@ How it differs from the local version:
 To try it locally with Cloudflare's runtime:
 
 ```bash
-npx wrangler pages dev public
+npx wrangler dev
 ```
 
 ## No limits

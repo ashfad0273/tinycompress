@@ -10,7 +10,7 @@ Double-click `start.bat`, or run `npm start` and open http://127.0.0.1:4711. Req
 2. Pick the output formats: AVIF (the default), WebP, PNG or same as source.
 3. Drop images or whole folders, then press Start.
 
-Results go to `output/<date_time>/` with your folder structure kept.
+Results go to `output/<date_time>/` with your folder structure kept. Use the download button on a finished row to save one image, or the ZIP button for the whole batch.
 
 ## Publish on Cloudflare
 

@@ -50,7 +50,7 @@ button, input, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Shell */
-.app { display: grid; grid-template-columns: 300px minmax(0, 1fr); width: 100%; max-width: var(--max); height: 100vh; margin: 0 auto; }
+.app { display: grid; grid-template-columns: 300px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); width: 100%; max-width: var(--max); height: 100vh; margin: 0 auto; }
 .side {
   display: flex;
   flex-direction: column;
@@ -319,13 +319,6 @@ textarea:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px 
 }
 .command-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 20px; }
 .out-dir { min-width: 0; overflow: hidden; color: var(--muted); font-size: 12px; white-space: nowrap; text-overflow: ellipsis; }
-.switch { display: inline-flex; flex: none; align-items: center; gap: 7px; margin-left: auto; color: var(--muted); font-size: 12.5px; cursor: pointer; }
-.switch input { position: absolute; opacity: 0; width: 0; height: 0; }
-.switch span { position: relative; width: 28px; height: 16px; border-radius: 8px; background: var(--line-strong); transition: background 0.2s; }
-.switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-sm); transition: transform 0.25s var(--ease); }
-.switch input:checked + span { background: var(--accent); }
-.switch input:checked + span::after { transform: translateX(12px); }
-.switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 .banner { padding: 10px 14px; border-radius: 10px; background: var(--warn-soft); color: var(--warn); font-size: 13px; font-weight: 550; animation: rise 0.3s var(--ease); }
 
 .list { position: relative; flex: 1; min-height: 180px; overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; scrollbar-width: thin; }
@@ -338,7 +331,7 @@ textarea:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px 
   left: 0;
   right: 0;
   display: grid;
-  grid-template-columns: 56px minmax(170px, 1fr) minmax(0, 2fr) 88px 32px;
+  grid-template-columns: 56px minmax(170px, 1fr) minmax(0, 2fr) 88px 62px;
   column-gap: 12px;
   gap: 14px;
   align-items: center;
@@ -435,7 +428,38 @@ a.stage.ok:hover { border-color: var(--accent); }
 .outcome.done strong { color: var(--good); }
 .outcome.failed strong { color: var(--bad); font-size: 13px; }
 .outcome.pending strong { color: var(--muted); font-size: 12.5px; font-weight: 500; }
-.row-actions { display: flex; justify-content: center; }
+.row-actions { display: flex; justify-content: flex-end; gap: 2px; }
+.download-menu {
+  position: fixed;
+  inset: auto;
+  min-width: 150px;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  color: inherit;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.14);
+}
+.download-menu:popover-open { animation: rise 0.2s var(--ease); }
+.download-menu button {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.download-menu button:hover, .download-menu button:focus-visible { outline: 0; background: var(--accent-soft); color: var(--accent); }
+.download-menu b { font-weight: 600; }
+.download-menu span { color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* Overlay and toasts */
 .overlay {
@@ -524,11 +548,11 @@ a.stage.ok:hover { border-color: var(--accent); }
 /* The stages drop to their own line when the window is narrow. */
 @media (max-width: 1280px) {
   :root { --row: 122px; }
-  .row { grid-template-columns: 56px minmax(0, 1fr) 84px 32px; grid-template-rows: auto auto; align-content: center; row-gap: 8px; }
+  .row { grid-template-columns: 56px minmax(0, 1fr) 84px 62px; grid-template-rows: auto auto; align-content: center; row-gap: 8px; }
   .stages { grid-column: 1 / 5; grid-row: 2; justify-content: flex-start; overflow: hidden; }
 }
 @media (max-width: 860px) {
-  .app { grid-template-columns: 1fr; height: auto; }
+  .app { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; }
   .side { border-right: 0; border-bottom: 1px solid var(--line); overflow: visible; }
   .main { min-height: 80vh; padding: 16px; }
   .list { flex: none; height: 75vh; }

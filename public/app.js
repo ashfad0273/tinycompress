@@ -13,6 +13,9 @@ const PARALLEL_IMAGES = 5;
 // Browsers cap how tall an element can be, so very long lists map scroll position to rows.
 const MAX_SPACER_PX = 20_000_000;
 
+// How long the list leaves someone alone after they scroll it themselves.
+const FOLLOW_PAUSE_MS = 5000;
+
 const $ = (id) => document.getElementById(id);
 
 let backend;
@@ -30,6 +33,7 @@ const state = {
   rows: new Map(),
   elapsedMs: 0,
   resumedAt: 0,
+  userScrolledAt: 0,
 };
 
 const counts = { done: 0, failed: 0, inputBytes: 0, outputBytes: 0 };
@@ -610,7 +614,7 @@ $('clear').addEventListener('click', () => {
   Object.assign(counts, { done: 0, failed: 0, inputBytes: 0, outputBytes: 0 });
   $('out-dir').textContent = '';
   $('list').scrollTop = 0;
-  $('follow').checked = true;
+  state.userScrolledAt = 0;
   hideBanner();
   scheduleEstimate();
   refresh();
@@ -625,6 +629,41 @@ $('pick-dest').addEventListener('click', async () => {
   const name = await backend.pickFolder();
   if (name) $('save-status').textContent = `Saving into ${name}, in a new subfolder for each batch.`;
 });
+
+/* Downloading one image */
+
+async function downloadOutput(output) {
+  const url = await backend.outputUrl(state.batch, output.path);
+  saveAs(url, output.path.split('/').pop());
+  if (url.startsWith('blob:')) setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+// A single format downloads straight away. Several open a menu to pick from.
+function downloadItem(item, button) {
+  if (item.outputs.length === 1) {
+    downloadOutput(item.outputs[0]);
+    return;
+  }
+  const menu = $('download-menu');
+  menu.replaceChildren(...item.outputs.map((output) => {
+    const choice = document.createElement('button');
+    choice.type = 'button';
+    const format = document.createElement('b');
+    format.textContent = output.ext.toUpperCase();
+    const size = document.createElement('span');
+    size.textContent = formatSize(output.size);
+    choice.append(format, size);
+    choice.addEventListener('click', () => {
+      menu.hidePopover();
+      downloadOutput(output);
+    });
+    return choice;
+  }));
+  menu.showPopover();
+  const box = button.getBoundingClientRect();
+  menu.style.left = `${Math.max(8, box.right - menu.offsetWidth)}px`;
+  menu.style.top = `${Math.min(box.bottom + 4, window.innerHeight - menu.offsetHeight - 8)}px`;
+}
 
 /* Before and after comparison */
 
@@ -807,9 +846,10 @@ function scrollRatio() {
   return spacer > view ? (full - view) / (spacer - view) : 1;
 }
 
-// Keeps the images being worked on visible until the user scrolls away themselves.
+// Keeps the images being worked on visible, pausing while the user looks around themselves.
 function followProgress() {
-  if (!$('follow').checked || !state.working.size) return;
+  if (!state.working.size || Date.now() - state.userScrolledAt < FOLLOW_PAUSE_MS) return;
+  if ($('download-menu').matches(':popover-open')) return;
   let lowest = Infinity;
   for (const item of state.working) lowest = Math.min(lowest, item.index);
   const list = $('list');
@@ -969,7 +1009,11 @@ function updateActions(row, item) {
   if (row.actionFor === item.status) return;
   row.actionFor = item.status;
   const buttons = [];
-  if (item.status === 'done') buttons.push(iconButton('eye', 'Compare before and after', () => openCompare(item)));
+  if (item.status === 'done') {
+    const label = item.outputs.length === 1 ? `Download ${item.outputs[0].ext.toUpperCase()}` : 'Download this image';
+    buttons.push(iconButton('download', label, (event) => downloadItem(item, event.currentTarget)));
+    buttons.push(iconButton('eye', 'Compare before and after', () => openCompare(item)));
+  }
   if (item.status === 'failed') buttons.push(iconButton('retry', 'Retry this image', () => retryItem(item)));
   if (item.status === 'pending') buttons.push(iconButton('x', 'Remove from queue', () => removeItem(item)));
   row.actions.replaceChildren(...buttons);
@@ -1002,12 +1046,15 @@ function renderStage(row, step) {
   return el;
 }
 
-$('list').addEventListener('scroll', () => requestAnimationFrame(renderRows), { passive: true });
+$('list').addEventListener('scroll', () => {
+  requestAnimationFrame(renderRows);
+  if ($('download-menu').matches(':popover-open')) $('download-menu').hidePopover(); // Its row has moved.
+}, { passive: true });
 for (const type of ['wheel', 'touchmove']) {
-  $('list').addEventListener(type, () => { $('follow').checked = false; }, { passive: true });
+  $('list').addEventListener(type, () => { state.userScrolledAt = Date.now(); }, { passive: true });
 }
 $('list').addEventListener('pointerdown', (event) => {
-  if (event.target === $('list')) $('follow').checked = false; // Dragging the scrollbar.
+  if (event.target === $('list')) state.userScrolledAt = Date.now(); // Dragging the scrollbar.
 });
 window.addEventListener('resize', () => refresh());
 $('formats').addEventListener('change', () => {

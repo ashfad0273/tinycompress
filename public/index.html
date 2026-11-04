@@ -22,7 +22,7 @@
         <symbol id="i-retry" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8L4 8.5M4 4v4.5h4.5" /></symbol>
         <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></symbol>
         <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></symbol>
-        <symbol id="i-zip" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" /></symbol>
+        <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" /></symbol>
         <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></symbol>
         <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
         <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
@@ -120,14 +120,13 @@
                 <button id="clear" class="btn quiet" type="button">Clear</button>
                 <button id="retry" class="btn" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#i-retry" /></svg>Retry failed</button>
                 <button id="open" class="btn" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#i-folder" /></svg>Open folder</button>
-                <button id="zip" class="btn" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#i-zip" /></svg>ZIP</button>
+                <button id="zip" class="btn" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#i-download" /></svg>ZIP</button>
                 <button id="start" class="btn primary start" type="button"><svg class="icon" aria-hidden="true"><use id="start-icon" href="#i-play" /></svg><span id="start-label">Start</span></button>
               </div>
             </div>
             <div class="progress" aria-hidden="true"><div id="progress"></div></div>
             <div class="command-foot">
               <span id="out-dir" class="out-dir"></span>
-              <label class="switch"><input id="follow" type="checkbox" checked /><span></span>Follow progress</label>
             </div>
           </div>
           <div id="banner" class="banner" role="alert" hidden></div>
@@ -147,6 +146,8 @@
     </div>
 
     <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+    <div id="download-menu" class="download-menu" popover></div>
 
     <dialog id="compare" class="compare">
       <header>
